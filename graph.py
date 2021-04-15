@@ -1,10 +1,10 @@
-def span_tree_find(subset, list_of_id_sets):
-    for i in range(len(list_of_id_sets)):
-        if subset in list_of_id_sets[i]:
+def span_tree_find(subset, number_squares):
+    for i in range(len(number_squares)):
+        if subset in number_squares[i]:
             return i
 
                
-def clear_border(last, current):
+def clean(last, current):
     if current[3] == 4:
         last[0].clear_left_bound()
         current[0].clear_right_bound()
@@ -15,6 +15,7 @@ def clear_border(last, current):
         last[0].clear_lower_bound()
     else:
         current[0].clear_lower_bound()
+
 
 def gen_graph(graph, length, width):
     for i in range(length):
@@ -34,15 +35,15 @@ def gen_graph(graph, length, width):
                 
 def span_tree_get_neighbours(current, field):
     neighbours = []
-    for el in get_neighbours(current[0], current[1], field):
-        if el.arrow == 3 and (current[0].lower_bound == " " or current[0].lower_bound == "?" or current[0].lower_bound == "!"):
-            neighbours.append(el)
-        if el.arrow == 1 and (el.field_element.lower_bound == " " or el.field_element.lower_bound == "!"):
-            neighbours.append(el)
-        if el.arrow == 4 and el.field_element.right_bound == " ":
-            neighbours.append(el)
-        if el.arrow == 2 and el.field_element.left_bound == " ":
-            neighbours.append(el)
+    for neib in get_neighbours(current[0], current[1], field):
+        if neib.arrow == 3 and (current[0].lower_bound == " " or current[0].lower_bound == "?" or current[0].lower_bound == "!"):
+            neighbours.append(neib)
+        if neib.arrow == 1 and (neib.Vertex.lower_bound == " " or neib.Vertex.lower_bound == "!"):
+            neighbours.append(neib)
+        if neib.arrow == 4 and neib.Vertex.right_bound == " ":
+            neighbours.append(neib)
+        if neib.arrow == 2 and neib.Vertex.left_bound == " ":
+            neighbours.append(neib)
     return neighbours
 
 def span_tree_get_path(start, finish, field):
@@ -54,49 +55,50 @@ def span_tree_get_path(start, finish, field):
     path = []
     field[start[0]][start[1]].distance = 0
     while (current[1], current[2]) != finish:
-        for el in span_tree_get_neighbours(current, field):
-            if not el[0].marked:
-                el[0].marked = True
-                path_queue.put(el)
-                el[0].distance = current[0].distance + 1
+        for neib in span_tree_get_neighbours(current, field):
+            if not neib[0].marked:
+                neib[0].marked = True
+                path_queue.put(neib)
+                neib[0].distance = current[0].distance + 1
         current = path_queue.get()
     while (current[1], current[2]) != start:
-        for el in span_tree_get_neighbours(current, field):
-            if el[0].distance == current[0].distance - 1:
-                path.append((el[1], el[2]))
-                current = el
+        for neib in span_tree_get_neighbours(current, field):
+            if neib[0].distance == current[0].distance - 1:
+                path.append((neib[1], neib[2]))
+                current = neib
     path.append(finish)
     return path
-
+    
+    
 def span_tree_gen(init_data):
     field = [[Square() for i in range(init_data[1])] for j in range(init_data[0])]
     random.seed(version=2)
     graph = set()
     gen_graph(graph, init_data[0], init_data[1])
     index_dict = {i * init_data[1] + j: (i, j) for i in range(init_data[0]) for j in range(init_data[1])}
-    list_of_id_sets = [set([i * init_data[1] + j]) for i in range(init_data[0]) for j in range(init_data[1])]
+    number_squares = [set([i * init_data[1] + j]) for i in range(init_data[0]) for j in range(init_data[1])]
     graph = list(graph)
     start = True
     path = []
-    while len(graph) > 0 and len(list_of_id_sets) > 1:
-        current_edge = random.choice(graph)
-        graph.remove(current_edge)
-        dom = span_tree_find(current_edge[0], list_of_id_sets)
-        ran = span_tree_find(current_edge[1], list_of_id_sets)
+    while len(graph) > 0 and len(number_squares) > 1:
+        rand_edge = random.choice(graph)
+        graph.remove(rand_edge)
+        dom = span_tree_find(rand_edge[0], number_squares)
+        ran = span_tree_find(rand_edge[1], number_squares)
         if dom == ran:
             continue
-        list_of_id_sets[dom] = set.union(list_of_id_sets[ran], list_of_id_sets[dom])
-        for i in range(ran, len(list_of_id_sets) - 1):
-            list_of_id_sets[i] = list_of_id_sets[i + 1]
-        list_of_id_sets.pop()
-        indexes_0 = index_dict[current_edge[0]]
-        indexes_1 = index_dict[current_edge[1]]
+        number_squares[dom] = set.union(number_squares[ran], number_squares[dom])
+        for i in range(ran, len(number_squares) - 1):
+            number_squares[i] = number_squares[i + 1]
+        number_squares.pop()
+        indexes_0 = index_dict[rand_edge[0]]
+        indexes_1 = index_dict[rand_edge[1]]
         if start:
             mark_start(field[indexes_0[0]][indexes_0[1]])
             path.append((indexes_0[0], indexes_0[1]))
             start = False
-        clear_border(([field[indexes_0[0]][indexes_0[1]]]), ([field[indexes_1[0]][indexes_1[1]],
-                                                                0, 0, current_edge[2]]))
+        clean(([field[indexes_0[0]][indexes_0[1]]]), ([field[indexes_1[0]][indexes_1[1]],\
+                                                                0, 0, rand_edge[2]]))
     mark_finish(([field[indexes_1[0]][indexes_1[1]]]))
     start = path[0]
     path = span_tree_get_path(start, (indexes_1[0], indexes_1[1]), field)
